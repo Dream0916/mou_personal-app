@@ -81,7 +81,7 @@ dependencies:
   device_info_plus: ^9.1.2
 
   # Testfairy
-  testfairy_flutter: any
+  # testfairy_flutter: any
 
 dev_dependencies:
   build_runner: ^2.4.8

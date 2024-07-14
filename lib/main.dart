@@ -25,7 +25,7 @@ import 'package:timezone/data/latest.dart' as tz;
 import 'helpers/routers.dart';
 import 'helpers/translations.dart';
 
-import 'package:testfairy_flutter/testfairy_flutter.dart';
+// import 'package:testfairy_flutter/testfairy_flutter.dart';
 
 Future main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -55,7 +55,7 @@ Future main() async {
     systemNavigationBarIconBrightness: Brightness.dark,
   ));
 
-  TestFairy.begin("SDK-W0ZFh3Fd");
+  // TestFairy.begin("SDK-W0ZFh3Fd");
 
   runApp(MultiProvider(providers: providers, child: MyApp()));
 }
