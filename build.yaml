@@ -1,0 +1,9 @@
+targets:
+  $default:
+    sources:
+      exclude:
+        - "lib/ios/.symlinks/**"
+    builders:
+      drift_dev:
+        options:
+          mutable_classes: true
