@@ -5,18 +5,19 @@ on:
     branches: [main]
 
 jobs:
-  build: 
-    name: Build new APK
-    runs-on: ubuntu-latest
+  build:
+    name: Build new APK and IPA
+    runs-on: macos-latest
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Set up JDK 11
+      - name: Set up JDK 22.0.1
         uses: actions/setup-java@v2
         with: 
           distribution: 'zulu'
-          java-version: '11'
+          java-version: '22.0.1'
 
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
@@ -33,19 +34,75 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-gradle-
 
+      - name: Get Flutter dependencies
+        run: flutter pub get
+
+      # Android build steps
       - name: Decode keystore
         run: |
           echo ${{ secrets.KEYSTORE_BASE64 }} | base64 --decode > android/app/keystore.jks
 
-      - name: Get Flutter dependencies
-        run: flutter pub get
-
       - name: Build APK
         run: flutter build apk --release --split-per-abi
 
-      - name: Push to Releases
-        uses: ncipollo/release-action@v1
+      # iOS build steps
+      - name: Set up Ruby
+        uses: actions/setup-ruby@v1
         with:
-          artifacts: "build/app/outputs/apk/release/*.apk"
-          tag: v0.0.1
-          token: ${{ secrets.GITHUB_TOKEN }}
+          ruby-version: '2.7'
+
+      - name: Install CocoaPods
+        run: sudo gem install cocoapods
+
+      - name: Install dependencies
+        run: pod install --project-directory=ios
+
+      - name: Decode signing certificate
+        run: |
+          echo ${{ secrets.SIGNING_CERTIFICATE }} | base64 --decode > Certificates.p12
+
+      - name: Create Provisioning Profile
+        run: |
+          echo ${{ secrets.PROVISIONING_PROFILE }} | base64 --decode > provisioning_profile.mobileprovision
+
+      - name: Set up keychain and import certificate
+        run: |
+          KEYCHAIN=build.keychain
+          security create-keychain -p actions $KEYCHAIN
+          security import Certificates.p12 -t agg -k ~/Library/Keychains/$KEYCHAIN -P ${{ secrets.CERTIFICATE_PASSWORD }} -A
+          security list-keychains -s ~/Library/Keychains/$KEYCHAIN
+          security default-keychain -s ~/Library/Keychains/$KEYCHAIN
+          security unlock-keychain -p actions ~/Library/Keychains/$KEYCHAIN
+          security set-keychain-settings -t 3600 -u ~/Library/Keychains/$KEYCHAIN
+          mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
+          cp provisioning_profile.mobileprovision ~/Library/MobileDevice/Provisioning\ Profiles/
+
+      - name: Build iOS
+        run: |
+          xcodebuild -workspace ios/Runner.xcworkspace \
+          -scheme Runner \
+          -sdk iphoneos \
+          -configuration Release \
+          archive -archivePath $PWD/build/Runner.xcarchive \
+          CODE_SIGN_STYLE=Manual \
+          CODE_SIGN_IDENTITY="Apple Distribution: <Your Apple Distribution Name (Team ID)>" \
+          PROVISIONING_PROFILE_SPECIFIER="<Your Provisioning Profile Name>"
+
+      - name: Export IPA
+        run: |
+          xcodebuild -exportArchive \
+          -archivePath $PWD/build/Runner.xcarchive \
+          -exportOptionsPlist ios/exportOptions.plist \
+          -exportPath $PWD/build/Runner.ipa
+
+      - name: Upload APKs
+        uses: actions/upload-artifact@v3
+        with:
+          name: APKs
+          path: build/app/outputs/flutter-apk/*.apk
+
+      - name: Upload IPAs
+        uses: actions/upload-artifact@v3
+        with:
+          name: IPAs
+          path: build/Runner.ipa
