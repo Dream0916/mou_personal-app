@@ -1,5 +1,5 @@
 class AppApis {
-  static const String domainAPI = "http://api.mou.center";
+  static const String domainAPI = "http://apimou.site/public";
 
   static const String domainFacebook = "https://graph.facebook.com/v6.0";
   static const String domainGoogle = "https://www.googleapis.com/gmail/v1";

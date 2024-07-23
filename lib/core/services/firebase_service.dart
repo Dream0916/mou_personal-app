@@ -21,7 +21,7 @@ class FirebaseService {
     String phoneNumber,
     PhoneVerificationCompleted verificationCompleted,
     PhoneVerificationFailed verificationFailed,
-  ) {
+  ) async {
     print("verifyPhone $phoneNumber");
     return FirebaseAuth.instance.verifyPhoneNumber(
       phoneNumber: phoneNumber,
