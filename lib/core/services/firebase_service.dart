@@ -23,6 +23,8 @@ class FirebaseService {
     PhoneVerificationFailed verificationFailed,
   ) async {
     print("verifyPhone $phoneNumber");
+    await _fireBaseAuth.setSettings(appVerificationDisabledForTesting: true);
+    
     return FirebaseAuth.instance.verifyPhoneNumber(
       phoneNumber: phoneNumber,
       codeAutoRetrievalTimeout: (String verId) {
